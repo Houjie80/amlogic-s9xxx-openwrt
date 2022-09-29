@@ -360,8 +360,8 @@ confirm_version() {
     s905x | hg680p | tbee | b860h)
         FDTFILE="meson-gxl-s905x-p212.dtb"
         UBOOT_OVERLOAD="u-boot-p212.bin"
-        MAINLINE_UBOOT=""
-        ANDROID_UBOOT=""
+        MAINLINE_UBOOT="u-boot-p212.bin"
+        ANDROID_UBOOT="u-boot-p212.bin"
         ;;
     s905w | x96mini | tx3mini)
         FDTFILE="meson-gxl-s905w-tx3-mini.dtb"
@@ -568,7 +568,7 @@ EOF
     # Add firmware information
     echo "PLATFORM='amlogic'" >>${op_release} 2>/dev/null
     echo "FDTFILE='${FDTFILE}'" >>${op_release} 2>/dev/null
-    echo "UBOOT_OVERLOAD='${UBOOT_OVERLOAD}'" >>${op_release} 2>/dev/null
+    echo "UBOOT_OVERLOAD=''/lib/u-boot/${MAINLINE_UBOOT}'" >>${op_release} 2>/dev/null
     echo "MAINLINE_UBOOT='/lib/u-boot/${MAINLINE_UBOOT}'" >>${op_release} 2>/dev/null
     echo "ANDROID_UBOOT='/lib/u-boot/${ANDROID_UBOOT}'" >>${op_release} 2>/dev/null
     echo "KERNEL_VERSION='${kernel}'" >>${op_release} 2>/dev/null
