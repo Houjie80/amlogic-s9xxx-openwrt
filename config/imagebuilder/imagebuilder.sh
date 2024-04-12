@@ -140,16 +140,7 @@ custom_packages() {
 
     # Download other luci-app-xxx
     # ......
-    # Download openclash
-    openclash_api="https://github.com/vernesong/OpenClash/releases"
-    #
-    openclash_file="luci-app-openclash"
-    openclash_file_down="$(curl -s ${openclash_api} | grep "browser_download_url" | grep -oE "https.*${openclash_name}.*.ipk" | head -n 1)"
-    curl -fsSOJL ${openclash_file_down}
-    [[ "${?}" -eq "0" ]] || error_msg "[ ${openclash_file} ] download failed!"
-    echo -e "${INFO} The [ ${openclash_file} ] is downloaded successfully."
-    #
-
+    
     sync && sleep 3
     echo -e "${INFO} [ packages ] directory status: $(ls -al 2>/dev/null)"
 }
