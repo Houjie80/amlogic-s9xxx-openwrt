@@ -141,7 +141,7 @@ custom_packages() {
     # Download other luci-app-xxx
     # ......
     # Download openclash
-    openclash_api="https://github.com/vernesong/OpenClash/blob/2aa811469c11f1985072574c653918f7062b189d/dev/luci-app-openclash_0.46.006-beta_all.ipk"
+    openclash_api="https://github.com/vernesong/OpenClash/releases"
     #
     openclash_file="luci-app-openclash"
     openclash_file_down="$(curl -s ${openclash_api} | grep "browser_download_url" | grep -oE "https.*${openclash_name}.*.ipk" | head -n 1)"
