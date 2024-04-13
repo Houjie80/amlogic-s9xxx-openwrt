@@ -200,6 +200,7 @@ rebuild_firmware() {
         luci-lib-ip luci-lib-ipkg luci-lib-jsonc luci-lib-nixio luci-mod-admin-full luci-mod-network \
         luci-mod-status luci-mod-system luci-proto-3g luci-proto-bonding luci-proto-ipip luci-proto-ipv6 \
         luci-proto-ncm luci-proto-openconnect luci-proto-ppp luci-proto-qmi luci-proto-relay dnsmasq-full -dnsmasq\
+        vnstat2 vnstati2 luci-app-diskman openssh-sftp-server -procd-ujail \
         \
         luci-app-amlogic luci-i18n-amlogic-zh-cn \
         \
