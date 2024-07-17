@@ -94,7 +94,7 @@ specific_6xy=("6.6.y" "6.1.y")
 specific_5xy=("5.15.y" "5.10.y" "5.4.y")
 specific_kernel=()
 # Set the list of kernels used by default(Selectable version)
-stable_kernel=("6.1.y" "5.15.y")
+stable_kernel=("6.6.y" "6.1.y")
 flippy_kernel=(${stable_kernel[@]})
 dev_kernel=(${stable_kernel[@]})
 beta_kernel=(${stable_kernel[@]})
@@ -370,8 +370,11 @@ git_pull_dir() {
         error_msg "git_pull_dir parameter is missing: [ ${git_repo}, ${git_branch}, ${git_path} ]"
     }
 
-    # Git clone the repository to the temporary directory
-    git clone --quiet --single-branch --depth=1 --branch=${git_branch} ${git_repo} ${git_path}
+    # Clone the repository to the temporary directory. If it fails, wait 1 minute and try again, try 10 times.
+    for i in {1..10}; do
+        git clone --quiet --single-branch --depth=1 --branch=${git_branch} ${git_repo} ${git_path}
+        [[ "${?}" -eq "0" ]] && break || sleep 60
+    done
     [[ "${?}" -eq "0" ]] || error_msg "Failed to clone the [ ${git_repo} ] repository."
 }
 
@@ -567,12 +570,17 @@ download_kernel() {
                     kernel_down_from="https://github.com/${kernel_repo}/releases/download/kernel_${kd}/${kernel_var}.tar.gz"
                     echo -e "${INFO} (${x}.${i}) [ ${k} - ${kernel_var} ] Kernel download from [ ${kernel_down_from} ]"
 
+                    # Download the kernel files. If the download fails, try again 10 times.
                     [[ -d "${kernel_path}/${kd}" ]] || mkdir -p ${kernel_path}/${kd}
-                    curl -fsSL "${kernel_down_from}" -o "${kernel_path}/${kd}/${kernel_var}.tar.gz"
-                    [[ "${?}" -ne "0" ]] && error_msg "Failed to download the kernel files from the server."
+                    for t in {1..10}; do
+                        curl -fsSL "${kernel_down_from}" -o "${kernel_path}/${kd}/${kernel_var}.tar.gz"
+                        [[ "${?}" -eq "0" ]] && break || sleep 60
+                    done
+                    [[ "${?}" -eq "0" ]] || error_msg "Failed to download the kernel files from the server."
 
+                    # Decompress the kernel files
                     tar -mxzf "${kernel_path}/${kd}/${kernel_var}.tar.gz" -C "${kernel_path}/${kd}"
-                    [[ "${?}" -ne "0" ]] && error_msg "[ ${kernel_var} ] kernel decompression failed."
+                    [[ "${?}" -eq "0" ]] || error_msg "[ ${kernel_var} ] kernel decompression failed."
                 else
                     echo -e "${INFO} (${x}.${i}) [ ${k} - ${kernel_var} ] Kernel is in the local directory."
                 fi
@@ -629,6 +637,11 @@ confirm_version() {
     # Set supported platform name
     support_platform=("amlogic" "rockchip" "allwinner")
     [[ -n "$(echo "${support_platform[@]}" | grep -w "${PLATFORM}")" ]] || error_msg "[ ${PLATFORM} ] not supported."
+
+    # Add u-boot files record information
+    [[ -n "${MAINLINE_UBOOT}" ]] && RECORD_MAINLINE_UBOOT="/lib/u-boot/${MAINLINE_UBOOT}" || RECORD_MAINLINE_UBOOT=""
+    [[ -n "${BOOTLOADER_IMG}" ]] && RECORD_BOOTLOADER_IMG="/lib/u-boot/${BOOTLOADER_IMG}" || RECORD_BOOTLOADER_IMG=""
+    [[ -n "${TRUST_IMG}" ]] && RECORD_TRUST_IMG="/lib/u-boot/${TRUST_IMG}" || RECORD_TRUST_IMG=""
 
     # Replace custom kernel tags
     [[ -n "${kernel_usage}" && "${KERNEL_TAGS}" == "${default_tags}" ]] && KERNEL_TAGS="${kernel_usage}"
@@ -1036,22 +1049,18 @@ EOF
         sed -e "s/macaddr=.*/macaddr=${random_macaddr}:00/" "brcmfmac4356-sdio.txt" >"brcmfmac4356-sdio.azw,gtking.txt"
         # gtking/gtking pro is bcm4356 wifi/bluetooth, wifi6 module AP6275S
         sed -e "s/macaddr=.*/macaddr=${random_macaddr}:01/" "brcmfmac4375-sdio.txt" >"brcmfmac4375-sdio.azw,gtking.txt"
-        # Phicomm N1 is bcm43455 wifi/bluetooth
-        sed -e "s/macaddr=.*/macaddr=${random_macaddr}:02/" "brcmfmac43455-sdio.txt" >"brcmfmac43455-sdio.phicomm,n1.txt"
         # MXQ Pro+ is AP6330(bcm4330) wifi/bluetooth
-        sed -e "s/macaddr=.*/macaddr=${random_macaddr}:03/" "brcmfmac4330-sdio.txt" >"brcmfmac4330-sdio.crocon,mxq-pro-plus.txt"
+        sed -e "s/macaddr=.*/macaddr=${random_macaddr}:02/" "brcmfmac4330-sdio.txt" >"brcmfmac4330-sdio.crocon,mxq-pro-plus.txt"
         # HK1 Box & H96 Max X3 is bcm54339 wifi/bluetooth
-        sed -e "s/macaddr=.*/macaddr=${random_macaddr}:04/" "brcmfmac4339-sdio.ZP.txt" >"brcmfmac4339-sdio.amlogic,sm1.txt"
-        # old ugoos x3 is bcm43455 wifi/bluetooth
-        sed -e "s/macaddr=.*/macaddr=${random_macaddr}:05/" "brcmfmac43455-sdio.txt" >"brcmfmac43455-sdio.amlogic,sm1.txt"
+        sed -e "s/macaddr=.*/macaddr=${random_macaddr}:03/" "brcmfmac4339-sdio.ZP.txt" >"brcmfmac4339-sdio.amlogic,sm1.txt"
         # new ugoos x3 is brm43456
-        sed -e "s/macaddr=.*/macaddr=${random_macaddr}:06/" "brcmfmac43456-sdio.txt" >"brcmfmac43456-sdio.amlogic,sm1.txt"
+        sed -e "s/macaddr=.*/macaddr=${random_macaddr}:04/" "brcmfmac43456-sdio.txt" >"brcmfmac43456-sdio.amlogic,sm1.txt"
         # x96max plus v5.1 (ip1001m phy) adopts am7256 (brcm4354)
-        sed -e "s/macaddr=.*/macaddr=${random_macaddr}:07/" "brcmfmac4354-sdio.txt" >"brcmfmac4354-sdio.amlogic,sm1.txt"
+        sed -e "s/macaddr=.*/macaddr=${random_macaddr}:05/" "brcmfmac4354-sdio.txt" >"brcmfmac4354-sdio.amlogic,sm1.txt"
         # panther x2 AP6212A
-        sed -e "s/macaddr=.*/macaddr=${random_macaddr}:08/" "brcmfmac43430-sdio.txt" >"brcmfmac43430-sdio.panther,x2.txt"
+        sed -e "s/macaddr=.*/macaddr=${random_macaddr}:06/" "brcmfmac43430-sdio.txt" >"brcmfmac43430-sdio.panther,x2.txt"
         # ct2000 s922x is brm4359
-        sed -i "s/macaddr=.*/macaddr=${random_macaddr}:09/" "brcmfmac4359-sdio.ali,ct2000.txt"
+        sed -i "s/macaddr=.*/macaddr=${random_macaddr}:07/" "brcmfmac4359-sdio.ali,ct2000.txt"
     )
 
     # Add firmware version information to the terminal page
@@ -1075,10 +1084,10 @@ EOF
     echo "KERNEL_TAGS='${KERNEL_DOWN_TAGS}'" >>${op_release}
     echo "KERNEL_VERSION='${kernel}'" >>${op_release}
     echo "BOOT_CONF='${BOOT_CONF}'" >>${op_release}
-    echo "MAINLINE_UBOOT='/lib/u-boot/${MAINLINE_UBOOT}'" >>${op_release}
-    echo "ANDROID_UBOOT='/lib/u-boot/${BOOTLOADER_IMG}'" >>${op_release}
+    echo "MAINLINE_UBOOT='${RECORD_MAINLINE_UBOOT}'" >>${op_release}
+    echo "ANDROID_UBOOT='${RECORD_BOOTLOADER_IMG}'" >>${op_release}
     if [[ "${PLATFORM}" == "rockchip" ]]; then
-        echo "TRUST_IMG='/lib/u-boot/${TRUST_IMG}'" >>${op_release}
+        echo "TRUST_IMG='${RECORD_TRUST_IMG}'" >>${op_release}
     elif [[ "${PLATFORM}" == "amlogic" ]]; then
         echo "UBOOT_OVERLOAD='${UBOOT_OVERLOAD}'" >>${op_release}
     fi
@@ -1128,7 +1137,7 @@ loop_make() {
     j="1"
     for b in "${make_openwrt[@]}"; do
         {
-            # Set specific configuration for building OpenWrt system
+            # Set specific configuration for making OpenWrt system
             board="${b}"
             confirm_version
 
@@ -1165,7 +1174,7 @@ loop_make() {
                     # Skip inapplicable kernels
                     if [[ "${KERNEL_TAGS}" =~ ^[1-9].[0-9]+ ]]; then
                         [[ "${kernel}" != "$(echo ${KERNEL_TAGS} | awk -F'.' '{print $1"."$2"."}')"* ]] && {
-                            echo -e "(${j}.${i}) ${NOTE} The [ ${board} ] device cannot use [ ${kd}/${kernel} ] kernel, skip."
+                            echo -e "(${j}.${i}) Based on model_database.conf, skip the [ ${board} - ${kd}/${kernel} ] make."
                             let i++
                             continue
                         }
@@ -1173,9 +1182,9 @@ loop_make() {
 
                     # Check disk space size
                     echo -ne "(${j}.${i}) Start making OpenWrt [\033[92m ${board} - ${KERNEL_TAGS}/${kernel} \033[0m]. "
-                    now_remaining_space="$(df -Tk ${make_path} | grep '/dev/' | awk '{print $5}' | echo $(($(xargs) / 1024 / 1024)))"
+                    now_remaining_space="$(df -Tk ${make_path} | tail -n1 | awk '{print $5}' | echo $(($(xargs) / 1024 / 1024)))"
                     if [[ "${now_remaining_space}" -le "3" ]]; then
-                        echo -e "${WARNING} Remaining space is less than 3G, exit this build."
+                        echo -e "${WARNING} Remaining space is less than 3G, exit this make."
                         break
                     else
                         echo "Remaining space is ${now_remaining_space}G."
